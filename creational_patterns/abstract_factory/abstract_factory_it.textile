@@ -1,0 +1,144 @@
+Una Factory astratta fornisce un'interfaccia comune per creare famiglie di oggetti tra loro relazionate.
+L'oggetto client non si preoccuperà di costruire direttamente gli oggetti di cui avrà bisogno, ma chiamerà i metodi forniti da questa interfaccia comune. 
+
+Vediamo di seguito una possibile implementazione di una Factory astratta e delle relative Factories concrete che la implementano.
+
+Supponiamo di avere due categorie di giochi come classi model:
+<code lang="ruby">
+#models.rb
+class Game
+  attr_accessor :title
+  def initialize(title)
+    @title = title
+  end
+end
+
+class Rpg < Game
+  def description
+    puts "I am a RPG named #{@title}"
+  end
+end
+
+class Arcade < Game
+  def description
+    puts "I am an Arcade named #{@title}"
+  end
+end 
+</code>
+Come si puo' notare, entrambi derivano da una superclasse comune Game.
+
+Definiamo ora le Factories incaricate a costruire questi oggetti:
+<code lang="ruby">
+#factories.rb
+module MyAbstractGameFactory
+  def create(title)
+    raise NotImplementedError, "You should implement this method"
+  end
+end
+
+class RpgFactory
+  include MyAbstractGameFactory
+  def create(title)
+    Rpg.new title
+  end
+end
+
+class ArcadeFactory
+  include MyAbstractGameFactory
+  def create(title)
+    Arcade.new title
+  end
+end  
+</code>
+Notiamo che è stata definita una Factory astratta (MyAbstractGameFactory) come modulo: questa definisce il metodo astratto create che deve essere implementato dalla classe che la include.
+RpgFactory e ArcadeFactory rappresentano le due Factory concrete incaricate di costruire rispettivamente giochi di tipo Rpg ed Arcade.
+
+Il codice di un eventuale GameStore, in grado di fornire giochi secondo le esigenze del cliente, sarà così definito:
+<code lang="ruby">
+class GameStore
+  def initialize(number_of_games, game_type)  
+    if game_type == :rpg
+      title = 'Final Fantasy'
+      game_factory = RpgFactory.new
+    elsif game_type== :arcade
+      title = 'Double Dragon'
+      game_factory = ArcadeFactory.new
+    end
+        
+    @games = []
+    number_of_games.times do |i|
+      @games << game_factory.create("#{title} #{i+1}")
+    end
+  end 
+  
+  def show_games
+    @games.each {|game| game.description} 
+  end
+end
+</code>
+
+A questo punto, lanciando il seguente file main.rb 
+
+<code lang="ruby">
+#main.rb
+require 'models.rb'
+require 'factories.rb'
+game_store = GameStore.new(2, :rpg)
+game_store.show_games
+game_store = GameStore.new(5, :arcade)
+game_store.show_games  
+</code>
+
+otterremo in console il seguente output:
+
+I am a RPG named Final Fantasy 1
+I am a RPG named Final Fantasy 2
+I am an Arcade named Double Dragon 1
+I am an Arcade named Double Dragon 2
+I am an Arcade named Double Dragon 3
+I am an Arcade named Double Dragon 4
+I am an Arcade named Double Dragon 5
+
+Ottimizziamo a questo punto le nostre Factories, in modo da sfruttare le potenzialità offerte da Ruby:
+<code lang="ruby">
+#factories2.rb
+class GameFactory
+  include MyAbstractGameFactory
+  
+  def initialize(game_class)
+    @game_class = game_class
+  end
+  
+  def create(title)
+    @game_class.new title
+  end
+end 
+
+class GameStore
+  def initialize(number_of_games, game_type)
+    c = Object.const_get(game_type.to_s.capitalize)
+
+    game_factory = GameFactory.new(c)
+    
+    if game_type == :rpg
+      title = 'Final Fantasy'
+    elsif game_type == :arcade
+      title = 'Double Dragon'
+    end
+    
+    @games = []
+    number_of_games.times do |i|
+      @games << game_factory.create("#{title} #{i}")
+    end
+  end 
+  
+  def show_games
+    @games.each {|game| game.description} 
+  end
+end
+</code>
+Come si puo' notare, ora un'unica Factory concreta GameFactory si preoccuperà di costruire Rpg e Arcade in base all'esigenza del momento.
+In questo modo si permette che un sistema sia indipendente dall'implementazione degli oggetti concreti e che il client, attraverso l'interfaccia, utilizzi le diverse famiglie di prodotti.
+Da notare che in entrambi gli esempi la definizione del modulo MyAbstractGameFactory ha di fatto solo uno scopo didattico e serve per "simulare" in Ruby un eventuale metodo astratto di una classe astratta.
+
+L'output generato invocando questo nuovo GameStore è lo stesso visto nel precedente esempio. 
