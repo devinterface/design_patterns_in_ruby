@@ -1,0 +1,191 @@
+Questo secondo post della serie abbandona i creational patterns e tratta uno degli strustural pattern più importanti: l'adapter.
+
+Lo scopo di un adapter è quello di convertire l'interfaccia di una classe in quella che viene richiesta dal client.
+Grazie ad un adapter è quindi possibile far interagire due classi dotate di interfacce incompatibili.
+
+Supponiamo dunque di avere due classi PalGame e NtscGame che estendono una superclasse Game. Queste sottoclassi espongono rispettivamente due metodi play e run.
+
+<code lang="ruby">
+#models.rb
+class Game
+  attr_accessor :title
+  def initialize(title)
+    @title = title
+  end
+end
+
+class PalGame < Game
+  def play
+    puts "I am the Pal version of #{@title} and I am running!"  
+  end
+end
+
+class NtscGame < Game  
+  def run
+    puts "I am the NTSC version of #{@title} and I am running!"  
+  end
+end
+</code>
+
+Abbiamo poi una classe Console estesa da una PalConsole ed una NtscConsole. Queste due classi si aspettano di dialogare con rispettivamente con giochi di tipo Pal ed Ntsc.
+
+<code lang="ruby">
+#models.rb
+class Console
+end
+
+class PalConsole < Console
+  def play_game(game)
+    game.play  
+  end
+end
+
+class NtscConsole < Console
+  def run_game(game)
+    game.run  
+  end
+end
+</code>
+
+Come si puo' infatti notare, il metodo play_game di una console Pal chiamerà il metodo run del gioco passatole, la console Ntsc chiamerà invece il metodo run.
+
+Il nostro obiettivo è quello di parmettere ad una PalConsole di poter lanciare dei giochi di tipo NtscGame.
+
+L'approccio che segue la linea tracciata dai GoF prevede di costruire una classe Adapter in grado di fornire alla PalConsole linterfaccia play di cui ha bisogno:
+
+<code lang="ruby">
+#adapters.rb
+class NtscToPalAdatper
+  attr_accessor :game
+  def initialize(game)
+    @game = game
+  end
+  
+  def play
+    @game.run  
+  end  
+end
+</code>
+
+Come si può notare, l'adapter espone semplicemente un metodo play che chiamerà il metodo run del gioco Ntsc.
+
+il seguente codice
+<code lang="ruby">
+#main.rb
+require 'models.rb'
+require 'adapters.rb'
+
+console = PalConsole.new
+
+final_fantasy = NtscGame.new("Final Fantasy")
+
+adapter = NtscToPalAdatper.new(final_fantasy)
+
+console.play_game(adapter)
+</code>
+fornirà il seguente output:
+
+I am the NTSC version of Final Fantasy and I am running!
+
+Vediamo a questo punto delle alternative in grado di sfruttare maggiormente le potenzialità di Ruby.
+
+Una prima possibilità è quella di sfruttare le Open Classes di Ruby: il linguaggio permette infatti di aggiungere metodi ad una classe già caricata, in questo modo:
+
+<code lang="ruby">
+#main2.rb
+require 'models.rb'
+
+console = PalConsole.new
+
+class NtscGame < Game  
+  def play
+    run 
+  end
+  
+  # alternatively for this simple example we can define an alias:
+  # alias play run
+end 
+
+final_fantasy = NtscGame.new("Final Fantasy")
+
+double_dragon = NtscGame.new("Double Dragon")
+
+console.play_game(final_fantasy)
+
+console.play_game(double_dragon)
+</code>
+
+Come possiamo notare, abbiamo aggiunto a runtime il metodo play al gioco NtscGame.
+
+Il codice sopra produce il seguente output:
+
+I am the NTSC version of Final Fantasy and I am running!
+I am the NTSC version of Double Dragon and I am running!
+
+Abbiamo aggiunto il metodo play a tutte le istanze della classe NtscGame. Questo tipo di intervento è comunque molto rischioso, in quanto potrebbe poi non garantire la compatibilità con eventuali altre librerie a causa di quelche name clash.
+
+Un'altra alternativa potrebbe essere quella di utilizzare delle Singleton Classes. Ruby permette infatti di modificare la classe di un'istanza di un oggetto, creando una classe anonima attorno ad esso che implementa il nuovo metodo aggiunto.
+
+Esistono numerose possibilità di implementare queste singleton classes:
+<code lang="ruby">
+#main3.rb
+require 'models.rb'
+
+console = PalConsole.new
+
+#1 - creating a singleton class
+final_fantasy = NtscGame.new("Final Fantasy")
+
+def final_fantasy.play
+  run  
+end
+
+console.play_game(final_fantasy)
+
+
+#2 - adding methods opening the singleton class directly
+winning_eleven = NtscGame.new("Winning Eleven")
+
+class << winning_eleven
+  def play
+    run
+  end
+end
+
+console.play_game(winning_eleven)
+
+
+#3 - adding methods from a module
+thunderforce = NtscGame.new("Thunderforce")
+
+module Foo
+  def play
+    run
+  end
+end
+
+thunderforce.extend(Foo)
+
+console.play_game(thunderforce)
+
+
+#4 - adding methods inside an instance_eval call 
+dragons_lair = NtscGame.new("Dragons Lair")
+
+dragons_lair.instance_eval <<EOT
+  def play
+    run
+  end
+EOT
+
+console.play_game(dragons_lair)
+</code>
+Tutte li implementazioni forniscono la stessa tipologia di output:
+
+I am the NTSC version of Final Fantasy and I am running!
+I am the NTSC version of Winning Eleven and I am running!
+I am the NTSC version of Thunderforce and I am running!
+I am the NTSC version of Dragons Lair and I am running!
+
+
+
