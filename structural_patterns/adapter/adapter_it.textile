@@ -1,9 +1,9 @@
-Questo secondo post della serie abbandona i creational patterns e tratta uno degli strustural pattern più importanti: l'adapter.
+Questo secondo post della serie abbandona momentaneamente i creational patterns e tratta uno degli structural pattern più importanti: l'adapter.
 
-Lo scopo di un adapter è quello di convertire l'interfaccia di una classe in quella che viene richiesta dal client.
-Grazie ad un adapter è quindi possibile far interagire due classi dotate di interfacce incompatibili.
+Lo scopo di un adapter è quello di convertire l'interfaccia di una classe in una richiesta dall'oggetto client.
+Grazie ad un adapter è quindi possibile far interagire due classi dotate di interfacce tra loro incompatibili.
 
-Supponiamo dunque di avere due classi PalGame e NtscGame che estendono una superclasse Game. Queste sottoclassi espongono rispettivamente due metodi play e run.
+Supponiamo dunque di avere due classi, PalGame e NtscGame, che estendono una superclasse Game. Queste sottoclassi espongono rispettivamente due metodi _play_ e _run_.
 
 <code lang="ruby">
 #models.rb
@@ -27,7 +27,7 @@ class NtscGame < Game
 end
 </code>
 
-Abbiamo poi una classe Console estesa da una PalConsole ed una NtscConsole. Queste due classi si aspettano di dialogare con rispettivamente con giochi di tipo Pal ed Ntsc.
+Abbiamo poi una classe Console estesa da PalConsole e NtscConsole. Queste due classi si aspettano di dialogare rispettivamente con giochi di tipo PalGame e NtscGame.
 
 <code lang="ruby">
 #models.rb
@@ -47,11 +47,11 @@ class NtscConsole < Console
 end
 </code>
 
-Come si puo' infatti notare, il metodo play_game di una console Pal chiamerà il metodo run del gioco passatole, la console Ntsc chiamerà invece il metodo run.
+Come si puo' infatti notare, il metodo <i>play_game</i> di una console PalConsole chiamerà il metodo _play_ del gioco passato come argomento; la console NtscConsole chiamerà invece il metodo _run_.
 
 Il nostro obiettivo è quello di parmettere ad una PalConsole di poter lanciare dei giochi di tipo NtscGame.
 
-L'approccio che segue la linea tracciata dai GoF prevede di costruire una classe Adapter in grado di fornire alla PalConsole linterfaccia play di cui ha bisogno:
+L'approccio che segue la linea tracciata dai GoF prevede di costruire una classe Adapter in grado di fornire alla PalConsole l'interfaccia _play_ di cui ha bisogno:
 
 <code lang="ruby">
 #adapters.rb
@@ -67,9 +67,9 @@ class NtscToPalAdatper
 end
 </code>
 
-Come si può notare, l'adapter espone semplicemente un metodo play che chiamerà il metodo run del gioco Ntsc.
+Vediamo dunque che l'adapter espone semplicemente un metodo _play_ che invocherà il metodo _run_ del gioco NtscGame.
 
-il seguente codice
+Il seguente codice
 <code lang="ruby">
 #main.rb
 require 'models.rb'
@@ -87,9 +87,10 @@ fornirà il seguente output:
 
 I am the NTSC version of Final Fantasy and I am running!
 
-Vediamo a questo punto delle alternative in grado di sfruttare maggiormente le potenzialità di Ruby.
 
-Una prima possibilità è quella di sfruttare le Open Classes di Ruby: il linguaggio permette infatti di aggiungere metodi ad una classe già caricata, in questo modo:
+A questo punto mostriamo delle alternative in grado di sfruttare maggiormente le potenzialità di Ruby.
+
+Una prima possibilità è quella di utilizzare le "open classes" di Ruby: il linguaggio permette infatti di aggiungere metodi ad una classe già caricata, in questo modo:
 
 <code lang="ruby">
 #main2.rb
@@ -115,18 +116,20 @@ console.play_game(final_fantasy)
 console.play_game(double_dragon)
 </code>
 
-Come possiamo notare, abbiamo aggiunto a runtime il metodo play al gioco NtscGame.
+Come possiamo notare, abbiamo aggiunto a runtime il metodo _play_ al gioco NtscGame.
 
 Il codice sopra produce il seguente output:
 
 I am the NTSC version of Final Fantasy and I am running!
 I am the NTSC version of Double Dragon and I am running!
 
-Abbiamo aggiunto il metodo play a tutte le istanze della classe NtscGame. Questo tipo di intervento è comunque molto rischioso, in quanto potrebbe poi non garantire la compatibilità con eventuali altre librerie a causa di quelche name clash.
+Notiamo però che con questa soluzione abbiamo aggiunto il metodo _play_ all'intera classe NtscGame. Tutte le istanze che verranno create, saranno dunque dotate del metodo _play_.
+Questo tipo di intervento è comunque molto rischioso, in quanto potrebbe poi non garantire la compatibilità con eventuali altre librerie a causa di quelche name clash.
 
-Un'altra alternativa potrebbe essere quella di utilizzare delle Singleton Classes. Ruby permette infatti di modificare la classe di un'istanza di un oggetto, creando una classe anonima attorno ad esso che implementa il nuovo metodo aggiunto.
+Un'altra alternativa potrebbe essere quella di utilizzare delle "singleton classes". 
+Ruby permette infatti di modificare una singola istanza di una classe, creando una classe anonima come sua superclasse che implementa il nuovo metodo dichiarato.
 
-Esistono numerose possibilità di implementare queste singleton classes:
+Esistono numerose possibilità per implementare queste singleton classes. Vediamo nello snippet sottostante le varie implementazioni.
 <code lang="ruby">
 #main3.rb
 require 'models.rb'
@@ -186,6 +189,8 @@ I am the NTSC version of Final Fantasy and I am running!
 I am the NTSC version of Winning Eleven and I am running!
 I am the NTSC version of Thunderforce and I am running!
 I am the NTSC version of Dragons Lair and I am running!
+
+In questo post abbiamo dunque visto l'utilità di questo design pattern e come Ruby permetta allo sviluppatore di "uscire" dall'implementazione classica suggerita in modo da poter sfruttare maggiormente le potenzialità del linguaggio. 
 
 
 
