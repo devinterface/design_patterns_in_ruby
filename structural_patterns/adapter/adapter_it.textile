@@ -1,9 +1,9 @@
-Questo secondo post della serie abbandona momentaneamente i creational patterns e tratta uno degli structural pattern più importanti: l'adapter.
+Questo secondo post della serie abbandona momentaneamente i creational patterns e tratta uno degli structural pattern più importanti: l'Adapter.
 
 Lo scopo di un adapter è quello di convertire l'interfaccia di una classe in una richiesta dall'oggetto client.
 Grazie ad un adapter è quindi possibile far interagire due classi dotate di interfacce tra loro incompatibili.
 
-Supponiamo dunque di avere due classi, PalGame e NtscGame, che estendono una superclasse Game. Queste sottoclassi espongono rispettivamente due metodi _play_ e _run_.
+Supponiamo dunque di avere due classi, PalGame e NtscGame, che estendono una superclasse Game. Queste sottoclassi espongono rispettivamente due metodi: _play_ e _run_.
 
 <code lang="ruby">
 #models.rb
@@ -47,7 +47,7 @@ class NtscConsole < Console
 end
 </code>
 
-Come si puo' infatti notare, il metodo <i>play_game</i> di una console PalConsole chiamerà il metodo _play_ del gioco passato come argomento; la console NtscConsole chiamerà invece il metodo _run_.
+Come si puo' infatti notare, il metodo play_game di una console PalConsole chiamerà il metodo _play_ del gioco passato come argomento; la console NtscConsole chiamerà invece il metodo _run_.
 
 Il nostro obiettivo è quello di parmettere ad una PalConsole di poter lanciare dei giochi di tipo NtscGame.
 
@@ -84,7 +84,6 @@ adapter = NtscToPalAdatper.new(final_fantasy)
 console.play_game(adapter)
 </code>
 fornirà il seguente output:
-
 I am the NTSC version of Final Fantasy and I am running!
 
 
@@ -119,7 +118,6 @@ console.play_game(double_dragon)
 Come possiamo notare, abbiamo aggiunto a runtime il metodo _play_ al gioco NtscGame.
 
 Il codice sopra produce il seguente output:
-
 I am the NTSC version of Final Fantasy and I am running!
 I am the NTSC version of Double Dragon and I am running!
 
@@ -184,7 +182,6 @@ EOT
 console.play_game(dragons_lair)
 </code>
 Tutte li implementazioni forniscono la stessa tipologia di output:
-
 I am the NTSC version of Final Fantasy and I am running!
 I am the NTSC version of Winning Eleven and I am running!
 I am the NTSC version of Thunderforce and I am running!

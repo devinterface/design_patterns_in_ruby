@@ -1,8 +1,8 @@
-This second post of the series leaves for a moment the creational patterns and speaks about one of the most important structural pattern: the adapter.
+This second post of the series leaves for a moment the creational patterns and speaks about one of the most important structural pattern: the Adapter.
 
 The purpose of an adapter is "to convert the interface of a class into another interface clients expect. Adapter lets classes work together that couldn't otherwise because of incompatible interfaces."
 
-Suppose therefore to have two classes, PalGame and NtscGame, that extend a superclass Game. These subclasses respectively expose two methods, _play_ and _run_.
+Suppose therefore to have two classes, PalGame and NtscGame, that extend a superclass Game. These subclasses respectively expose two methods: _play_ and _run_.
 
 <code lang="ruby">
 #models.rb
@@ -26,7 +26,7 @@ class NtscGame < Game
 end
 </code>
 
-We then subclass a Console class with PalConsole and NtscConsole. These two classes are expected to talk with, respectively, games like PalGame and NtscGame.
+We then subclass a Console class with PalConsole and NtscConsole. These two classes are expected to talk with, respectively, games of kind PalGame and NtscGame.
 
 <code lang="ruby">
 #models.rb
@@ -48,7 +48,7 @@ end
 
 How can see, the method play_game of a PalConsole will call the _play_ method of the game, the NtscConsole instead will invoke the _run_ method.
 
-Our goal is to let a PalConsole to run games like NtscGame.
+Our goal is to let a PalConsole to run games of kind NtscGame.
 
 Below we'll follow the line traced by the GoF and we'll build an Adapter class that provides the _play_ method needed by the PalConsole's interface:
 
@@ -83,13 +83,12 @@ adapter = NtscToPalAdatper.new(final_fantasy)
 console.play_game(adapter)
 </code>
 will produce this output:
-
 I am the NTSC version of Final Fantasy and I am running!
 
 
 We see at this point some alternatives to further exploit the potential of Ruby.
 
-One possibility is to take advantage of the "open classes" in Ruby. The language makes possible to add methods to an already loaded class in this way:
+One possibility is to take advantage of the Ruby's "open classes". The language makes possible to add methods to an already loaded class in this way:
 
 <code lang="ruby">
 #main2.rb
@@ -118,17 +117,16 @@ console.play_game(double_dragon)
 As we can see, we've added at runtime the method _play_ for a NtscGame game.
 
 The above code produces the following output:
-
 I am the NTSC version of Final Fantasy and I am running!
 I am the NTSC version of Double Dragon and I am running!
 
 Note however that with this solution we added the _play_ method to the entire class NtscGame. All instances that are created will be equipped with the _play_ method.
-This type of action is very risky because it could not guarantee compatibility with other libraries because of name clash.
+This type of action is very risky because it could not guarantee compatibility with other libraries, for example because of name clash.
 
 Another alternative would be to use the "singleton classes".
 Ruby makes it possible to change a single instance of a class, by creating an anonymous class as its superclass that implements the new defined method.
 
-There are several possibilities to implement these singleton classes. We see in the following snippet some implementations.
+There are several possibilities to implement these singleton classes. Let's see in the following snippet some implementations.
 <code lang="ruby">
 #main3.rb
 require 'models.rb'
@@ -183,7 +181,6 @@ EOT
 console.play_game(dragons_lair)
 </code>
 All implementations will provide the same type of output:
-
 I am the NTSC version of Final Fantasy and I am running!
 I am the NTSC version of Winning Eleven and I am running!
 I am the NTSC version of Thunderforce and I am running!
