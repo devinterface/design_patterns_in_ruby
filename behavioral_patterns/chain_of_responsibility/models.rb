@@ -6,10 +6,9 @@ module Chainable
   def method_missing(method, *args, &block)
     if @next == nil
       puts "This request cannot be handled!"
-    return
-  end
-
-  @next.__send__(method, *args, &block)
+      return
+    end
+    @next.__send__(method, *args, &block)
   end
 end
 
