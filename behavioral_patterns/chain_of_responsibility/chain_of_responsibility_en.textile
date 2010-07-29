@@ -1,0 +1,134 @@
+Today's post discusses the first of the behavioral pattern shown by the GoF, the chain of responsibility.
+
+This pattern expects a series of commands to be executed and a set of objects capable to handle them.
+Each of these "handler" objects can send the command to the next handler in the chain if it is not able to carry it out.
+A mechanism also exists for adding new handler objects to the end of this chain.
+
+To show this pattern, we take as example a real situation very familiar to web developers.
+
+Suppose that the manager must deliver a new web project.
+
+To realize the entire project should be conducted several heterogeneous activities such as design the user interface, develop the application, write the user manual, deploy the application.
+
+The manager doesn't have all required skills but he can rely on a pool of developers.
+
+When the activity reaches a developer, this can solve it or, if he is unable to, send it to a colleague.
+In this way a chain of responsibility is formed, where each actor specializes in solving only certain types of requests.
+
+Let's see how to carry out this scenario in Ruby.
+
+Is therefore necessary that every element in the chain has the ability to "forward" the request to the next if he is not able to manage it.
+
+So we create a module that defines this common logic and removes code duplication.
+
+<code lang="ruby">
+#models.rb
+module Chainable
+  def next_in_chain(link)
+    @next = link
+  end
+
+  def method_missing(method, *args, &block)
+    if @next == nil
+      puts "This request cannot be handled!"
+    return
+  end
+
+  @next.__send__(method, *args, &block)
+  end
+end
+</code>  
+
+As you can see, the next_in_chain method provides the next element in the chain.
+To meet demands that can not be managed, I've used the method_missing "pattern" : when the request can not be managed by the actor (e.g. the invoked method is not defined in the class), it will be forwarded to the next.
+
+Now define the players of our example:
+ 
+<code lang="ruby">
+#models.rb
+class WebManager
+  include Chainable
+  
+  def initialize(link = nil)
+    next_in_chain(link)
+  end
+  
+  def deliver_application
+    design_interface
+    build_application
+    write_documentation
+    deploy_application
+    puts "#{self.class.to_s}: Application delivered"
+  end
+end
+
+class WebDeveloper
+  include Chainable
+  
+  def initialize(link = nil)
+    next_in_chain(link)
+  end
+  
+  def build_application
+    puts "#{self.class.to_s}: I'm building the application"
+  end
+  
+  def deploy_application
+    puts "#{self.class.to_s}: I'm deploying the application"
+  end
+end
+
+class WebDesigner
+  include Chainable
+  
+  def initialize(link = nil)
+    next_in_chain(link)
+  end
+  
+  def design_interface
+    puts "#{self.class.to_s}: I'm designing the interface"
+  end
+end
+
+class TechnicalWriter
+  include Chainable
+  
+  def initialize(link = nil)
+    next_in_chain(link)
+  end
+  
+  def write_documentation
+    puts "#{self.class.to_s}: I'm writing the documentation"
+  end
+end
+</code>
+
+At this point we simulate our chain by running the following code:
+
+<code lang="ruby">
+#main.rb
+require 'models.rb'
+
+provider = WebManager.new(WebDeveloper.new(WebDesigner.new(TechnicalWriter.new)))
+provider.deliver_application
+provider.make_support
+</code>
+
+and the output will be:
+
+WebDesigner: I'm designing the interface
+WebDeveloper: I'm building the application
+TechnicalWriter: I'm writing the documentation
+WebDeveloper: I'm deploying the application
+WebManager: Application delivered
+This request cannot be handled!
+
+In conclusion, the use of this pattern is useful when we deal with heterogeneous requests and we want to make sure that these are best handled by a specific handler.
+It can also be used when we run commands in sequence, where each element forwards the coming command to the next handler.
+ 
+An alternative to this pattern could be a decorator, able to add capacity to a specific handler. In this case a single handler will completely manage all requests.
+
+
+In these first three articles of the series we have analyzed the first pattern shown by the GoF for each category.
+
+In the coming articles I will no more follow the order set by the GoF but I'll analyze the most useful patterns to address the most common needs.

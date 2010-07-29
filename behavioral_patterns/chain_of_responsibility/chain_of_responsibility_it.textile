@@ -1,0 +1,132 @@
+Il post di oggi tratta il primo dei pattern comportamentali mostrati dai GoF, la catena delle responsabilità.
+Questo pattern prevede una serie di comandi da eseguire ed una serie di oggetti adibiti alla loro applicazione.
+Ognuno di questi oggetti "handler" è in grado di inoltrare il comando ad un successivo handler della catena nel caso in cui non abbia le caratteristiche per eseguirlo.
+Deve essere dunque implementato il meccanismo per poter linkare questi handler alla coda della catena. 
+
+Per mostrare questo pattern, prendiamo come esempio una situazione reale molto nota agli sviluppatori web.
+
+Supponiamo che un manager abbia il compito di consegnare un nuovo progetto web. 
+Per realizzare l'intero progetto devono essere svolte diverse attività eterogenee, come ad esempio disegnare l'interfaccia grafica, sviluppate l'applicazione, scrivere il manuale utente, deployare l'applicazione.
+
+Il manager non ha queste conoscenze tecniche ma puo' contare su un pool di sviluppatori.
+Quando l'attività arriva ad uno sviluppatore, questo puo' risolverla od inoltrarla ad un collega se non è in grado di fronteggiarla.
+Si forma in questo modo una catena di responsabilità, in cui ogni attore è specializzato a risolvere solo particolari tipi di richieste.
+
+Vediamo ora come implementare in Ruby questa situazione.
+
+E' necessario dunque che ogni elemento della catena abbia la capacità di "inoltrare" la richiesta al successivo se non è in grado di gestirla.
+
+Creiamo dunque un modulo che definisce questa logica comune in modo da eliminare duplicazioni nel codice.
+
+<code lang="ruby">
+#models.rb
+module Chainable
+  def next_in_chain(link)
+    @next = link
+  end
+
+  def method_missing(method, *args, &block)
+    if @next == nil
+      puts "This request cannot be handled!"
+    return
+  end
+
+  @next.__send__(method, *args, &block)
+  end
+end
+</code>  
+
+Come si puo' notare, il metodo next_in_chain stabilisce quale sarà il prossimo elemento della catena.
+Per far fronte a richieste che non possono essere gestite, ho usato il "pattern" del method_missing: quando la richiesta non potrà essere gestita dall'attore (i.e. il metodo invocato non è definito nella classe), questo verrà inoltrato al successivo attore.
+
+Definiamo ora gli attori del nostro esempio:
+ 
+<code lang="ruby">
+#models.rb
+class WebManager
+  include Chainable
+  
+  def initialize(link = nil)
+    next_in_chain(link)
+  end
+  
+  def deliver_application
+    design_interface
+    build_application
+    write_documentation
+    deploy_application
+    puts "#{self.class.to_s}: Application delivered"
+  end
+end
+
+class WebDeveloper
+  include Chainable
+  
+  def initialize(link = nil)
+    next_in_chain(link)
+  end
+  
+  def build_application
+    puts "#{self.class.to_s}: I'm building the application"
+  end
+  
+  def deploy_application
+    puts "#{self.class.to_s}: I'm deploying the application"
+  end
+end
+
+class WebDesigner
+  include Chainable
+  
+  def initialize(link = nil)
+    next_in_chain(link)
+  end
+  
+  def design_interface
+    puts "#{self.class.to_s}: I'm designing the interface"
+  end
+end
+
+class TechnicalWriter
+  include Chainable
+  
+  def initialize(link = nil)
+    next_in_chain(link)
+  end
+  
+  def write_documentation
+    puts "#{self.class.to_s}: I'm writing the documentation"
+  end
+end
+</code>
+
+A questo punto simuliamo la nostra catena lanciando il seguente codice:
+
+<code lang="ruby">
+#main.rb
+require 'models.rb'
+
+provider = WebManager.new(WebDeveloper.new(WebDesigner.new(TechnicalWriter.new)))
+provider.deliver_application
+provider.make_support
+</code>
+
+L'output fornito sarà:
+
+WebDesigner: I'm designing the interface
+WebDeveloper: I'm building the application
+TechnicalWriter: I'm writing the documentation
+WebDeveloper: I'm deploying the application
+WebManager: Application delivered
+This request cannot be handled!
+
+
+Concludendo, l'utilizzo di questo pattern risulta utile quando dobbiamo fronteggiare richieste eterogenee e vogliamo fare in modo che queste vengano gestite al meglio dallo specifico handler.
+Può anche essere utilizzato quando abbiamo comandi da gestire in successione, in cui ogni elemento inoltra il proseguo dell'azione al successivo.
+ 
+Una alternativa a questo pattern potrebbe essere l'utilizzo di decorator, in grado di aggiungere potenzialità ad un handler specifico. 
+In questo caso un singolo handler provvederà a gestire interamente tutte le richieste.
+
+In questi primi tre articoli della serie sui design patterns in Ruby abbiamo analizzato per ogni categoria individuata dai GoF il primo pattern da loro mostrato.
+
+Nei prossimi articoli non seguirò l'ordine previsto dai GoF ma analizzerò i pattern che riterrò più utili per fronteggiare le più comuni necessità. 
